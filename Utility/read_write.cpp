@@ -87,7 +87,7 @@ void read_double_array (string filename, string path_in_file, double *buffer) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void read_sim_data (string filename, int &nsteps, int &nbeads, int &nsamp, int &ncells, double &lx, double &ly, double &dt, double &eps, double &rho, double &fp, double &areak, double &bl, double &sigma) {
+void read_sim_data (string filename, int &nsteps, int &nbeads, int &nsamp, int &nfils, int &nbpf, double &lx, double &ly, double &dt, double &density, double &kappa, double &km, double &pa, double &bl, double &sigma) {
   /* read general simulation data in hdf5 format */
  
   const char *fl1 = filename.c_str();
@@ -114,14 +114,15 @@ void read_sim_data (string filename, int &nsteps, int &nbeads, int &nsamp, int &
   nsteps = read_integer_data(file, "/info/nsteps", i_buffer);
   nbeads = read_integer_data(file, "/info/nbeads", i_buffer);
   nsamp = read_integer_data(file, "/info/nsamp", i_buffer);
-  ncells = read_integer_data(file, "/info/ncells", i_buffer);  
+  nfils = read_integer_data(file, "/info/nfils", i_buffer);
+  nbpf = read_integer_data(file, "/info/nbpf", i_buffer);
 
   // read in the simulation parameters
   
-  eps = read_double_data(file, "/param/eps", d_buffer);
-  rho = read_double_data(file, "/param/rho", d_buffer);
-  fp = read_double_data(file, "/param/fp", d_buffer);
-  areak = read_double_data(file, "/param/areak", d_buffer);
+  density = read_double_data(file, "/param/density", d_buffer);
+  kappa = read_double_data(file, "/param/kappa", d_buffer);
+  km = read_double_data(file, "/param/km", d_buffer);
+  pa = read_double_data(file, "/param/pa", d_buffer);
   bl = read_double_data(file, "/param/bl", d_buffer);
   sigma = read_double_data(file, "/param/sigma", d_buffer);
 
