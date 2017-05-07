@@ -41,9 +41,9 @@ def read_contextual_info():
     
     ### generate folder path
     
-    folder = args.folder + 'density_' + str(args.density) + '/pa_' + str(args.pa) + \
-        '/pp_' + str(args.pp) 
-    newfolder = args.newfolder + 'density_' + str(args.density) + '/pa_' + str(args.pa) + \
+    folder = args.folder + 'density_' + str(args.density) + '/pa_' + str(args.panti) + \
+        '/pp_' + str(args.ppar) 
+    newfolder = args.newfolder + 'density_' + str(args.density) + '/pa_' + str(args.panti) + \
         '/pp_' + str(args.pp)
     fpath = folder + '/out.dump'
     assert os.path.exists(fpath), "\nOUT.DUMP DOES NOT EXIST FOR: " + folder 
