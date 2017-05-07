@@ -39,7 +39,7 @@ def get_img(x, lx):
 class Beads:
     """ data structure for storing particle/bead information"""
     
-    def __init__(self, x, cid):
+    def __init__(self, x, cid, d):
         
         ### assign bead positions
         
@@ -48,6 +48,10 @@ class Beads:
         ### assign cell indices to beads
         
         self.cid = cid
+        
+        ### assign orientations to bonds
+        
+        #self.pol = d
         
         return
         
@@ -71,13 +75,9 @@ class Cells:
         
         self.xu = x
         
-        ### assign polarity
-        
-        self.pol = d
-        
         ### assign number of beads info
         
-        self.nbpf = nbpf
+        self.nbpc = nbpf
         
         return
 
@@ -96,7 +96,7 @@ class Simulation:
     """ data structure for storing general simulation information"""
 
     def __init__(self, lx, ly, dt, nsteps, nfils, nbeads, nsamp, nbpf, \
-                 density, kappa, km, pa, bl, sigma):
+                 density, kappa, km, pa, pp, bl, sigma):
         
         self.lx = lx
         self.ly = ly
@@ -105,11 +105,12 @@ class Simulation:
         self.nbeads = nbeads
         self.nsamp = nsamp
         self.nfils = nfils
-        self.nbpf = nbpf
+        self.nbpc = nbpf
         self.density = float("{:.1f}".format(float(density)))
         self.kappa = float("{:.1f}".format(float(kappa)))
         self.km = float("{:.1f}".format(float(km)))
         self.pa = float("{:.1f}".format(float(pa)))
+        self.pp = float("{:.1f}".format(float(pp)))
         self.bl = bl
         self.sigma = sigma
         

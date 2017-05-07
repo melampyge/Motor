@@ -15,26 +15,21 @@ import h5py
 import misc_tools
 
 ##############################################################################
-    
-def read_h5_file(folder):
-    """ read data from hdf5 file"""
+
+def read_h5_file_beads(folder, filen):
+    """ read data from hdf5 file for filament information"""
     
     ### file path
     
-    fpath = folder + 'out.h5'
+    fpath = folder + filen + '.h5'
     assert os.path.exists(fpath), "The out.h5 file does NOT exist for " + fpath
     fl = h5py.File(fpath, 'r')
     
-    ### positions of beads
+    ### bead information
     
     xu = np.array(fl['/beads/xu'], dtype=np.float32)
-    cid = np.array(fl['/beads/cid'], dtype=np.float32)
-    
-    ### cell information
-    
-    comu = np.array(fl['/cells/comu'], dtype=np.float32)
-    pol = np.array(fl['/cells/pol'], dtype=np.float32)
-    nbpc = np.array(fl['/cells/nbpc'], dtype=np.float32)
+    #pol = np.array(fl['/beads/pol'], dtype=np.float32)
+    cid = np.array(fl['/beads/cid'], dtype=np.int32)
     
     ### simulation information
     
@@ -42,16 +37,18 @@ def read_h5_file(folder):
     ly = fl['/info/box/y'][...]
     dt = fl['/info/dt'][...]
     nsteps = fl['/info/nsteps'][...]
-    ncells = fl['/info/ncells'][...]
+    nfils = fl['/info/nfils'][...]
     nbeads = fl['/info/nbeads'][...]
     nsamp = fl['/info/nsamp'][...]
+    nbpf = fl['/info/nbpf'][...]
     
     ### simulation parameters
     
-    eps = fl['/param/eps'][...]
-    rho = fl['/param/rho'][...]
-    fp = fl['/param/fp'][...]
-    areak = fl['/param/areak'][...]
+    density = fl['/param/density'][...]
+    kappa = fl['/param/kappa'][...]
+    km = fl['/param/km'][...]
+    pa = fl['/param/pa'][...]
+    pp = fl['/param/pp'][...]
     bl = fl['/param/bl'][...]
     sigma = fl['/param/sigma'][...]
     
@@ -59,29 +56,113 @@ def read_h5_file(folder):
     
     ### generate classes to submerge data
     
-    sim = misc_tools.Simulation(lx, ly, dt, nsteps, ncells, nbeads, nsamp, nbpc, \
-                     eps, rho, fp, areak, bl, sigma)
-    cells = misc_tools.Cells(comu, pol, nbpc, sim)
+    sim = misc_tools.Simulation(lx, ly, dt, nsteps, nfils, nbeads, nsamp, nbpf, \
+                     density, kappa, km, pa, pp, bl, sigma)
     beads = misc_tools.Beads(xu, cid)
     
-    return sim, cells, beads
-
+    return sim, beads
+    
 ##############################################################################
     
-def read_h5_file_fils(folder):
+def read_h5_file(folder, filen):
     """ read data from hdf5 file for filament information"""
     
     ### file path
     
-    fpath = folder + 'out_fil.h5'
-    assert os.path.exists(fpath), "The out_fil.h5 file does NOT exist for " + fpath
+    fpath = folder + filen + '.h5'
+    assert os.path.exists(fpath), "The out.h5 file does NOT exist for " + fpath
     fl = h5py.File(fpath, 'r')
     
     ### cell information
     
-    xu = np.array(fl['/positions/xi'], dtype=np.float32)
-    #xi = np.array(fl['/positions/x'], dtype=np.float32)
-    #xi = [xt.T  for xt in xi[:]]
+    xu = np.array(fl['/cells/comu'], dtype=np.float32)
+    
+    ### simulation information
+    
+    lx = fl['/info/box/x'][...]
+    ly = fl['/info/box/y'][...]
+    dt = fl['/info/dt'][...]
+    nsteps = fl['/info/nsteps'][...]
+    nfils = fl['/info/nfils'][...]
+    nbeads = fl['/info/nbeads'][...]
+    nsamp = fl['/info/nsamp'][...]
+    nbpf = fl['/info/nbpf'][...]
+    
+    ### simulation parameters
+    
+    density = fl['/param/density'][...]
+    kappa = fl['/param/kappa'][...]
+    km = fl['/param/km'][...]
+    pa = fl['/param/pa'][...]
+    pp = fl['/param/pp'][...]
+    bl = fl['/param/bl'][...]
+    sigma = fl['/param/sigma'][...]
+    
+    fl.close()
+    
+    ### generate classes to submerge data
+    
+    sim = misc_tools.Simulation(lx, ly, dt, nsteps, nfils, nbeads, nsamp, nbpf, \
+                     density, kappa, km, pa, pp, bl, sigma)
+    fils = misc_tools.Cells(xu, nbpf, sim)
+    
+    return sim, fils
+    
+##############################################################################
+    
+def read_sim_info(folder, filen):
+    """ read simulation info from hdf5 file"""
+    
+    ### file path
+    
+    fpath = folder + filen + '.h5'
+    assert os.path.exists(fpath), "The out.h5 file does NOT exist for " + fpath
+    fl = h5py.File(fpath, 'r')    
+    
+    ### simulation information
+    
+    lx = fl['/info/box/x'][...]
+    ly = fl['/info/box/y'][...]
+    dt = fl['/info/dt'][...]
+    nsteps = fl['/info/nsteps'][...]
+    nfils = fl['/info/nfils'][...]
+    nbeads = fl['/info/nbeads'][...]
+    nsamp = fl['/info/nsamp'][...]
+    nbpf = fl['/info/nbpf'][...]
+    
+    ### simulation parameters
+    
+    density = fl['/param/density'][...]
+    kappa = fl['/param/kappa'][...]
+    km = fl['/param/km'][...]
+    pa = fl['/param/pa'][...]
+    pp = fl['/param/pp'][...]
+    bl = fl['/param/bl'][...]
+    sigma = fl['/param/sigma'][...]
+    
+    fl.close()
+    
+    ### generate classes to submerge data
+    
+    sim = misc_tools.Simulation(lx, ly, dt, nsteps, nfils, nbeads, nsamp, nbpf, \
+                     density, kappa, km, pa, pp, bl, sigma)
+    
+    return sim
+
+##############################################################################
+    
+def read_h5_file_arvind_format(folder, filen):
+    """ read data from hdf5 file for filament information in arvind style"""
+    
+    ### file path
+    
+    fpath = folder + filen + '.h5'
+    assert os.path.exists(fpath), "The out.h5 file does NOT exist for " + fpath
+    fl = h5py.File(fpath, 'r')
+    
+    ### cell information
+    
+    xu = np.array(fl['/positions/xu'], dtype=np.float32)
     pol = np.array(fl['/positions/ori'], dtype=np.float32)
     pol = np.array([xt.T for xt in pol[:]])
     
@@ -102,6 +183,7 @@ def read_h5_file_fils(folder):
     kappa = fl['/param/kappa'][...]
     km = fl['/param/km'][...]
     pa = fl['/param/pa'][...]
+    pp = fl['/param/pp'][...]
     bl = fl['/param/bl'][...]
     sigma = fl['/param/sigma'][...]
     
@@ -110,20 +192,20 @@ def read_h5_file_fils(folder):
     ### generate classes to submerge data
     
     sim = misc_tools.Simulation(lx, ly, dt, nsteps, nfils, nbeads, nsamp, nbpf, \
-                     density, kappa, km, pa, bl, sigma)
+                     density, kappa, km, pa, pp, bl, sigma)
     fils = misc_tools.Cells(xu, pol, nbpf, sim)
     
     return sim, fils
     
 ##############################################################################
     
-def read_sim_info(folder):
-    """ read simulation info from hdf5 file"""
+def read_sim_info_arvind_format(folder, filen):
+    """ read simulation info from hdf5 file in arvind style"""
     
     ### file path
     
-    fpath = folder + 'out_fil.h5'
-    assert os.path.exists(fpath), "The out_fil.h5 file does NOT exist for " + fpath
+    fpath = folder + filen + '.h5'
+    assert os.path.exists(fpath), "The out.h5 file does NOT exist for " + fpath
     fl = h5py.File(fpath, 'r')    
     
     ### simulation information
@@ -143,6 +225,7 @@ def read_sim_info(folder):
     kappa = fl['/param/kappa'][...]
     km = fl['/param/km'][...]
     pa = fl['/param/pa'][...]
+    pp = fl['/param/pp'][...]
     bl = fl['/param/bl'][...]
     sigma = fl['/param/sigma'][...]
     
@@ -151,7 +234,7 @@ def read_sim_info(folder):
     ### generate classes to submerge data
     
     sim = misc_tools.Simulation(lx, ly, dt, nsteps, nfils, nbeads, nsamp, nbpf, \
-                     density, kappa, km, pa, bl, sigma)
+                     density, kappa, km, pa, pp, bl, sigma)
     
     return sim
     

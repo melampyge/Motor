@@ -87,7 +87,7 @@ void read_double_array (string filename, string path_in_file, double *buffer) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void read_sim_data (string filename, int &nsteps, int &nbeads, int &nsamp, int &nfils, int &nbpf, double &lx, double &ly, double &dt, double &density, double &kappa, double &km, double &pa, double &bl, double &sigma) {
+void read_sim_data (string filename, int &nsteps, int &nbeads, int &nsamp, int &nfils, int &nbpf, double &lx, double &ly, double &dt, double &density, double &kappa, double &km, double &pa, double &pp, double &bl, double &sigma) {
   /* read general simulation data in hdf5 format */
  
   const char *fl1 = filename.c_str();
@@ -123,6 +123,7 @@ void read_sim_data (string filename, int &nsteps, int &nbeads, int &nsamp, int &
   kappa = read_double_data(file, "/param/kappa", d_buffer);
   km = read_double_data(file, "/param/km", d_buffer);
   pa = read_double_data(file, "/param/pa", d_buffer);
+  pp = read_double_data(file, "/param/pp", d_buffer);
   bl = read_double_data(file, "/param/bl", d_buffer);
   sigma = read_double_data(file, "/param/sigma", d_buffer);
 

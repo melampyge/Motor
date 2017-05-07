@@ -24,22 +24,26 @@ def read_contextual_info():
     parser.add_argument("-t", "--tstep", nargs="?", const="100000000", \
                             type=int, help="The last time step that is being searched for")
     parser.add_argument("-d", "--density", type=float, help="Packing fraction of the system")  
-    parser.add_argument("-e", "--eps", type=float, help="Strength of LJ interaction")
-    parser.add_argument("-f", "--fp", type=float, help="Propulsion force")
-    parser.add_argument("-a", "--areak", type=float, help="Area constraint strength")
+    parser.add_argument("-k", "--kappa", type=float, help="Bending rigidity")
+    parser.add_argument("-m", "--km", type=float, help="Motor strength")
+    parser.add_argument("-pa", "--panti", type=float, 
+                        help="Probability of motor attachment in anti-orientation")
+    parser.add_argument("-pp", "--ppar", type=float, 
+                        help="Probability of motor attachment in parallel-orientation")    
     parser.add_argument("-dt", "--timestep", type=float, help="Timestep of the simulation")
     parser.add_argument("-ns", "--nsamp", type=int, help="Sampling rate of data")
     parser.add_argument("-b", "--bl", type=float, help="Bond length of the simulation")    
     parser.add_argument("-s", "--sigma", type=float, help="Lennard Jones length")     
-    parser.add_argument("-nc", "--ncells", type=int, help="Number of cells")         
+    parser.add_argument("-nc", "--ncells", type=int, help="Number of cells")    
+    parser.add_argument("-nb", "--nbpc", type=int, help="Number of beads per bond")              
     args = parser.parse_args()
     
     ### generate folder path
     
-    folder = args.folder + 'density_' + str(args.density) + '/eps_' + str(args.eps) + \
-        '/fp_' + str(args.fp) + '/areak_' + str(args.areak)
-    fpath = folder + '/out1.dump'
-    assert os.path.exists(fpath), "\nOUT1.DUMP DOES NOT EXIST FOR: " + folder 
+    folder = args.folder + 'density_' + str(args.density) + '/pa_' + str(args.pa) + \
+        '/pp_' + str(args.pp) 
+    fpath = folder + '/out.dump'
+    assert os.path.exists(fpath), "\nOUT.DUMP DOES NOT EXIST FOR: " + folder 
 
     print fpath
 
@@ -88,7 +92,7 @@ def get_number_of_snaps(f, nbeads):
 
 ##############################################################################
     
-def read_pos(fl, x, nbeads, nsnaps, lx, ly, checked, tstep_cnt, T, d, mid):
+def read_pos(fl, x, nbeads, nsnaps, lx, ly, checked, tstep_cnt, T, mid):
     """ read the position data from the file and return the last timestep at the end"""
 
     ### read the positions unique per each tstep in a single dump file
@@ -135,9 +139,10 @@ def read_pos(fl, x, nbeads, nsnaps, lx, ly, checked, tstep_cnt, T, d, mid):
                 continue
             bid = int(line[0]) - 1
             mid[bid] = int(line[1]) - 1
-            x[tstep_cnt, 0, bid] = float(line[2])
-            x[tstep_cnt, 1, bid] = float(line[3])
-            d[tstep_cnt, mid[bid]] = float(line[4])
+            ix = float(line[6])
+            iy = float(line[7])
+            x[tstep_cnt, 0, bid] = float(line[3]) + ix*lx
+            x[tstep_cnt, 1, bid] = float(line[4]) + iy*ly
 
         print tstep_cnt, tstep
 
@@ -150,32 +155,22 @@ def read_pos_from_dump_files(folder, nbeads, ncells, nsteps, T, lx, ly):
 
     ### generate file path and the total number of snapshots in the file
     
-    current_file_number = 0
     x = np.zeros((nsteps, 2, nbeads), dtype=np.float32)
-    d = np.zeros((nsteps, ncells), dtype=np.int32)    
     mid = np.zeros((nbeads), dtype=np.int32)
     tstep_cnt = -1
     checked = []
     tstep = 0
-    
-    while tstep < T:
+    fpath = folder + '/out.dump'
+    assert os.path.exists(fpath), "out dump file does NOT exist for: " + fpath
+    fl = open(fpath, 'r')
+    tstep_cnt, tstep = read_pos(fl, x, nbeads, nsteps, lx, ly, checked, tstep_cnt, T, mid)
+    fl.close()
         
-        current_file_number += 1
-        fpath = folder + '/out' + str(current_file_number) + '.dump'
-        assert os.path.exists(fpath), "out dump file does NOT exist for: " + fpath
-        fl = open(fpath, 'r')
-        nsnaps = get_number_of_snaps(fpath, nbeads)
-        
-        ### read the positions unique per each tstep in a single dump file
-        
-        tstep_cnt, tstep = read_pos(fl, x, nbeads, nsnaps, lx, ly, checked, tstep_cnt, T, d, mid)
-        fl.close()
-        
-    return x, d, mid
+    return x, mid
     
 ##############################################################################
     
-def write_h5_file(folder, x, d, mid, com, nbeads, nsteps, nbpc, lx, ly, args):
+def write_h5_file(folder, x, d, mid, com, nbeads, nsteps, nbpf, lx, ly, args):
     """ write data to hdf5 file"""
     
     ### file path
@@ -188,14 +183,13 @@ def write_h5_file(folder, x, d, mid, com, nbeads, nsteps, nbpc, lx, ly, args):
     bead = fl.create_group('beads')
     bead.create_dataset('xu', (nsteps, 2, nbeads), data=x, dtype=np.float32, compression='gzip') 
     bead.create_dataset('cid', data=mid) 
+    #bead.create_dataset('pol', (nsteps, args.nbeads-1), data=d, dtype=np.float32, compression='gzip')
     
     
     ### cell information
     
     cell = fl.create_group('cells')
     cell.create_dataset('comu', (nsteps, 2, args.ncells), data=com, dtype=np.float32, compression='gzip') 
-    cell.create_dataset('pol', (nsteps, args.ncells), data=d, dtype=np.float32, compression='gzip')
-    cell.create_dataset('nbpc', data=nbpc)
     
     ### simulation information
     
@@ -208,14 +202,16 @@ def write_h5_file(folder, x, d, mid, com, nbeads, nsteps, nbpc, lx, ly, args):
     info.create_dataset('ncells', data=args.ncells)
     info.create_dataset('nbeads', data=nbeads)
     info.create_dataset('nsamp', data=args.nsamp)
+    cell.create_dataset('nbpf', data=nbpf)
     
     ### simulation parameters
     
     param = fl.create_group('param')
-    param.create_dataset('eps', data=args.eps)
-    param.create_dataset('rho', data=args.density)
-    param.create_dataset('fp', data=args.fp)
-    param.create_dataset('areak', data=args.areak)
+    param.create_dataset('density', data=args.density)
+    param.create_dataset('kappa', data=args.kappa)
+    param.create_dataset('km', data=args.km)
+    param.create_dataset('pa', data=args.pa)
+    param.create_dataset('pp', data=args.pa)    
     param.create_dataset('bl', data=args.bl)
     param.create_dataset('sigma', data=args.sigma)
     
@@ -224,52 +220,18 @@ def write_h5_file(folder, x, d, mid, com, nbeads, nsteps, nbpc, lx, ly, args):
     return
 
 ##############################################################################
-
-def get_beads_per_cell_data(folder, nbeads, args):
-    """ append the number of beads per cell data to the existing data file"""
-    
-    nbpc = np.zeros((args.ncells), dtype=int)
-    
-    ### read the input file in equib until the bonds section
-    
-    ifilepath = args.folder + 'density_' + str(args.density) + '/equib/input.data'
-    ifile = open(ifilepath, 'r')
-    
-    for j in range(2*nbeads):
-        line = ifile.readline()
-        line = line.split()
-        if len(line) > 0:
-            if line[0] == 'Bonds':
-                break
-    
-    ### check the bonds to determine number of beads per cell
-    
-    k = 0
-    ifile.readline()
-    for j in range(nbeads):
-        line = ifile.readline()
-        line = line.split()
-        b1 = int(line[2])
-        b2 = int(line[3])
-        if b1 > b2:
-            nbpc[k] = b1-b2+1
-            k += 1
-                
-    ifile.close()
-
-    return nbpc
- 
-##############################################################################
     
 def calculate_com_of_cells(xu, nsteps, nbpc, args):   
     """ calculate the center of mass of cells"""
+    
+    print "Calculating center of mass of filaments"
     
     com = np.zeros((nsteps, 2, args.ncells), dtype=np.float32)
     
     k = 0
     for j in range(args.ncells):
-        com[:, :, j] = np.mean(xu[:, :, k:k+nbpc[j]], axis=2)
-        k += nbpc[j]
+        com[:, :, j] = np.mean(xu[:, :, k:k+nbpc], axis=2)
+        k += nbpc
     
     return com
 
@@ -283,16 +245,35 @@ def calculate_com_of_cells_one_liner(xu, mid, nsteps, nbeads, nbpc):
     com = np.swapaxes(np.swapaxes(r, 0, 1), 1, 2)
     
     return com
+
+##############################################################################
+ 
+#def calculate_orientations(xu, nbeads, ncells, nsteps, nbpf, lx, ly):
+#    """ calculate bond orientations"""
+#    
+#    print "Calculating bond orientations"
+#    
+#    d = np.zeros((nsteps, nbeads-1), dtype=np.float32)
+#    k = 0
+#    for tstep in range(nsteps):
+#        for j in range(ncells):
+#            for l in range(nbpf):
+#                dx = x[tstep, k+1, ]
+#                d[tstep, k] =
+#                k += 1
+#        
+#    
+#    return d
     
 ##############################################################################
     
 def main():
 
     folder, nbeads, nsteps, lx, ly, args = read_contextual_info()
-    xu, d, mid = read_pos_from_dump_files(folder, nbeads, args.ncells, nsteps, args.tstep, lx, ly)
-    nbpc = get_beads_per_cell_data(folder, nbeads, args)
-    com = calculate_com_of_cells(xu, nsteps, nbpc, args)
-    write_h5_file(folder, xu, d, mid, com, nbeads, nsteps, nbpc, lx, ly, args)
+    xu, mid = read_pos_from_dump_files(folder, nbeads, args.ncells, nsteps, args.tstep, lx, ly)
+    #d = calculate_orientations(xu, nbeads, args.ncells, nsteps, args.nbpc, lx, ly)
+    com = calculate_com_of_cells(xu, nsteps, args.nbpc, args)
+    write_h5_file(folder, xu, mid, com, nbeads, nsteps, args.nbpc, lx, ly, args)
     
     return
     
