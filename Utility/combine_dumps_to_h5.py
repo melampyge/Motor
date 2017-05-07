@@ -44,7 +44,7 @@ def read_contextual_info():
     folder = args.folder + 'density_' + str(args.density) + '/pa_' + str(args.panti) + \
         '/pp_' + str(args.ppar) 
     newfolder = args.newfolder + 'density_' + str(args.density) + '/pa_' + str(args.panti) + \
-        '/pp_' + str(args.pp)
+        '/pp_' + str(args.ppar)
     fpath = folder + '/out.dump'
     assert os.path.exists(fpath), "\nOUT.DUMP DOES NOT EXIST FOR: " + folder 
 
