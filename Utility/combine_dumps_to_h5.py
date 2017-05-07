@@ -173,7 +173,7 @@ def read_pos_from_dump_files(folder, nbeads, ncells, nsteps, T, lx, ly):
     
 ##############################################################################
     
-def write_h5_file(folder, x, d, mid, com, nbeads, nsteps, nbpf, lx, ly, args):
+def write_h5_file(folder, x, mid, com, nbeads, nsteps, nbpf, lx, ly, args):
     """ write data to hdf5 file"""
     
     ### file path
