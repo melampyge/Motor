@@ -21,6 +21,7 @@ def read_contextual_info():
     
     parser = argparse.ArgumentParser()
     parser.add_argument("-fl", "--folder", help="Folder containing data")
+    parser.add_argument("-nfl", "--newfolder", help="Folder to put the data in")    
     parser.add_argument("-t", "--tstep", nargs="?", const="100000000", \
                             type=int, help="The last time step that is being searched for")
     parser.add_argument("-d", "--density", type=float, help="Packing fraction of the system")  
@@ -72,7 +73,7 @@ def read_contextual_info():
     nsteps = args.tstep/args.nsamp
     nsteps += 1
             
-    return folder, nbeads, nsteps, lx, ly, args
+    return folder, newfolder, nbeads, nsteps, lx, ly, args
 
 ##############################################################################
     
@@ -175,6 +176,7 @@ def write_h5_file(folder, x, d, mid, com, nbeads, nsteps, nbpf, lx, ly, args):
     
     ### file path
     
+    os.system("mkdir -p " + folder)
     fpath = folder + '/out.h5'
     fl = h5py.File(fpath, 'w')
     
@@ -269,11 +271,11 @@ def calculate_com_of_cells_one_liner(xu, mid, nsteps, nbeads, nbpc):
     
 def main():
 
-    folder, nbeads, nsteps, lx, ly, args = read_contextual_info()
+    folder, newfolder, nbeads, nsteps, lx, ly, args = read_contextual_info()
     xu, mid = read_pos_from_dump_files(folder, nbeads, args.ncells, nsteps, args.tstep, lx, ly)
     #d = calculate_orientations(xu, nbeads, args.ncells, nsteps, args.nbpc, lx, ly)
     com = calculate_com_of_cells(xu, nsteps, args.nbpc, args)
-    write_h5_file(folder, xu, mid, com, nbeads, nsteps, args.nbpc, lx, ly, args)
+    write_h5_file(newfolder, xu, mid, com, nbeads, nsteps, args.nbpc, lx, ly, args)
     
     return
     
